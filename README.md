@@ -22,7 +22,7 @@ To deactivate your environment, simply run
 ```
 deactivate
 ```
-Now, all the required packages are located in **`requirements.txt`**.  So, when someone wants to download our repository and have their environment replicate ours, they simply need to run
+Now, all the required packages are located in [requirements.txt](requirements.txt).  So, when someone wants to download our repository and have their environment replicate ours, they simply need to run
 ```
 python -m pip install -r requirements.txt
 ```
