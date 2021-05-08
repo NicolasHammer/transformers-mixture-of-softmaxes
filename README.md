@@ -6,15 +6,15 @@ To make sure that all developers are working with the same tools, please work in
 ```
 python3 -m pip install --user virtualenv
 ```
-Now, create your virtual environment 
+Now, create your virtual environment:
 ```
 python3 -m venv env
 ```
-and activate it:
+To activate your environment, run
 ```
 source env/bin/activate
 ```
-You can now install packages as you normall would do.  When you are done installing packages, send them to a **`requirements.txt`** file:
+You can now install packages as you normally would do.  When you are done installing packages, send them to a **`requirements.txt`** file:
 ```
 python3 -m pip freeze > requirements.txt
 ```
