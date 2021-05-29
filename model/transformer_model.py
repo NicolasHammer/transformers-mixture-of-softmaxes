@@ -5,9 +5,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 
+from .mixture_of_softmaxes import MixtureOfSoftmaxes
 
 class TransformerModel(nn.Module):
-    def __init__(self, ntoken, ninp, nhead, nhid, nlayers, dropout=0.5):
+    def __init__(self, ntoken, ninp, nhead, nhid, nlayers, dropout=0.5, num_softmaxes = 1):
         super(TransformerModel, self).__init__()
         self.model_type = 'Transformer'
         self.pos_encoder = PositionalEncoding(ninp, dropout)
@@ -15,7 +16,14 @@ class TransformerModel(nn.Module):
         self.transformer_encoder = TransformerEncoder(encoder_layers, nlayers)
         self.encoder = nn.Embedding(ntoken, ninp)
         self.ninp = ninp
-        self.decoder = nn.Linear(ninp, ntoken)
+
+        # Set up decoder
+        if num_softmaxes == 1:
+            self.decoder = nn.Sequential(nn.Linear(ninp, ntoken), nn.LogSoftmax(dim = -1))
+        elif num_softmaxes > 1:
+            self.decoder = MixtureOfSoftmaxes(num_softmaxes, ntoken, ninp)
+        else:
+            raise Exception("num_softmaxes needs to be greater than 0")
 
         self.init_weights()
 
@@ -28,8 +36,13 @@ class TransformerModel(nn.Module):
     def init_weights(self):
         initrange = 0.1
         self.encoder.weight.data.uniform_(-initrange, initrange)
-        self.decoder.bias.data.zero_()
-        self.decoder.weight.data.uniform_(-initrange, initrange)
+
+        def init_decoder(module):
+            if isinstance(module, nn.Linear):
+                module.bias.data.zero_()
+                module.weight.data.uniform_(-initrange, initrange)
+
+        self.decoder.apply(init_decoder)
 
     def forward(self, src, src_mask):
         src = self.encoder(src) * math.sqrt(self.ninp)
