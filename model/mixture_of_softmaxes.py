@@ -2,6 +2,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
+
 class MixtureOfSoftmaxes(nn.Module):
     def __init__(self, num_softmaxes, ntoken, embedding_size):
         super(MixtureOfSoftmaxes, self).__init__()
@@ -11,7 +12,8 @@ class MixtureOfSoftmaxes(nn.Module):
         self.num_softmaxes = num_softmaxes
 
         self.prior = nn.Linear(embedding_size, num_softmaxes)
-        self.latent = nn.Sequential(nn.Linear(embedding_size, num_softmaxes*embedding_size), nn.Tanh())
+        self.latent = nn.Sequential(
+            nn.Linear(embedding_size, num_softmaxes*embedding_size), nn.Tanh())
         self.decoder = nn.Linear(embedding_size, ntoken)
 
     def forward(self, input):
@@ -21,7 +23,8 @@ class MixtureOfSoftmaxes(nn.Module):
         prior_logit = self.prior(input).view(-1, self.num_softmaxes)
         prior = F.softmax(prior_logit, -1)
 
-        prob = F.softmax(logit.view(-1, self.ntoken), -1).view(-1, self.num_softmaxes, self.ntoken)
+        prob = F.softmax(logit.view(-1, self.ntoken), -
+                         1).view(-1, self.num_softmaxes, self.ntoken)
         prob = (prob * prior.unsqueeze(2).expand_as(prob)).sum(1)
 
         output = torch.log(prob.add_(1e-8)).view(-1, self.ntoken)

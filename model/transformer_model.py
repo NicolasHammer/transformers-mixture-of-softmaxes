@@ -2,13 +2,13 @@ import math
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 
 from .mixture_of_softmaxes import MixtureOfSoftmaxes
 
+
 class TransformerModel(nn.Module):
-    def __init__(self, ntoken, ninp, nhead, nhid, nlayers, dropout=0.5, num_softmaxes = 1):
+    def __init__(self, ntoken, ninp, nhead, nhid, nlayers, dropout=0.5, num_softmaxes=1):
         super(TransformerModel, self).__init__()
         self.model_type = 'Transformer'
         self.pos_encoder = PositionalEncoding(ninp, dropout)
@@ -19,7 +19,8 @@ class TransformerModel(nn.Module):
 
         # Set up decoder
         if num_softmaxes == 1:
-            self.decoder = nn.Sequential(nn.Linear(ninp, ntoken), nn.LogSoftmax(dim = -1))
+            self.decoder = nn.Sequential(
+                nn.Linear(ninp, ntoken), nn.LogSoftmax(dim=-1))
         elif num_softmaxes > 1:
             self.decoder = MixtureOfSoftmaxes(num_softmaxes, ntoken, ninp)
         else:
