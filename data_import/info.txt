@@ -1,3 +1,0 @@
-Here are the download links for the WMT'14 English-German data:
-Enlish (644.9 MB): https://nlp.stanford.edu/projects/nmt/data/wmt14.en-de/train.en
-German (717.6 MB): https://nlp.stanford.edu/projects/nmt/data/wmt14.en-de/train.de
