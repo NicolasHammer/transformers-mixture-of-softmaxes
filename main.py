@@ -11,7 +11,8 @@ from model import make_transformer, make_mos_transformer
 
 parser = argparse.ArgumentParser(description='Transformer-MOS')
 parser.add_argument('--data', type=str, default='./data/penntreebank', help='location of corpus')
-parser.add_argument('--mos', default=False, action='store_true', help='use mixture of softmax decoder')
+parser.add_argument('--mos', default=True, action='store_true', help='use mixture of softmax decoder')
+parser.add_argument('--mixtures', type=int, default=10, help='num mixtures of softmax')
 parser.add_argument('--dmodel', type=int, default=200, help='dimension of model')
 parser.add_argument('--layers', type=int, default=4, help='number of transformer encoder layers')
 parser.add_argument('--ffhidden', type=int, default=200, help='number of feed forward hidden units')
@@ -34,6 +35,7 @@ MODEL_SAVE_DIR = './model'
 model = None
 ntokens = 0
 criterion = nn.NLLLoss()
+
 
 def batchify(data, bsz):
     nbatch = data.size(0) // bsz
@@ -94,7 +96,7 @@ def train(train_data, val_data, args):
             best_val_loss = val_loss
             torch.save(model.state_dict(), 'model_weights.pth')
         else:
-            lr = lr/2.0
+            lr = lr / 2.0
 
 
 def evaluate(data_source, args):
@@ -131,9 +133,14 @@ if __name__ == '__main__':
     test_data = batchify(corpus.test, EVAL_BATCH_SIZE)
 
     make = make_mos_transformer if args.mos else make_transformer
-
-    model = make(n_tokens=ntokens, dim_model=args.dmodel, n_heads=args.nhead, n_layers=args.layers,
-                 n_ff_hid=args.ffhidden, dropout=args.dropout)
+    if args.mos:
+        model = make_mos_transformer(n_experts=args.mixtures, n_tokens=ntokens, dim_model=args.dmodel,
+                                     n_heads=args.nhead, n_layers=args.layers,
+                                     n_ff_hid=args.ffhidden, dropout=args.dropout)
+        print("Using MOS")
+    else:
+        model = make_transformer(n_tokens=ntokens, dim_model=args.dmodel, n_heads=args.nhead, n_layers=args.layers,
+                                 n_ff_hid=args.ffhidden, dropout=args.dropout)
     model.to(device)
 
     LR = args.lr
