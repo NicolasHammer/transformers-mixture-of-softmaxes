@@ -16,14 +16,14 @@ parser.add_argument('--mixtures', type=int, default=10, help='num mixtures of so
 parser.add_argument('--dmodel', type=int, default=200, help='dimension of model')
 parser.add_argument('--layers', type=int, default=4, help='number of transformer encoder layers')
 parser.add_argument('--ffhidden', type=int, default=200, help='number of feed forward hidden units')
-parser.add_argument('--dropout', type=float, default=.2, help='dropout rate')
+parser.add_argument('--dropout', type=float, default=.25, help='dropout rate')
 parser.add_argument('--nhead', type=int, default=4, help='number of attention heads')
-parser.add_argument('--seed', type=int, default=1111, help='seed')
+parser.add_argument('--seed', type=int, default=26, help='seed')
 parser.add_argument('--cuda', default=True, action='store_true', help='cuda')
 parser.add_argument('--batch_size', type=int, default=20, help='training batch size')
 parser.add_argument('--bptt', type=int, default=35, help='sequence length')
-parser.add_argument('--lr', type=float, default=5, help='learning rate')
-parser.add_argument('--epochs', type=int, default=30, help='num epochs')
+parser.add_argument('--lr', type=float, default=7, help='learning rate')
+parser.add_argument('--epochs', type=int, default=50, help='num epochs')
 parser.add_argument('--log-interval', type=int, default=200, metavar='N',
                     help='report interval')
 parser.add_argument('--clip', type=float, default=0.25,
@@ -96,7 +96,7 @@ def train(train_data, val_data, args):
             best_val_loss = val_loss
             torch.save(model.state_dict(), 'model_weights.pth')
         else:
-            lr = lr / 2.0
+            lr = lr / 1.75
 
 
 def evaluate(data_source, args):
@@ -141,6 +141,11 @@ if __name__ == '__main__':
     else:
         model = make_transformer(n_tokens=ntokens, dim_model=args.dmodel, n_heads=args.nhead, n_layers=args.layers,
                                  n_ff_hid=args.ffhidden, dropout=args.dropout)
+        print("Using non-mos")
+
+    total_params = sum(x.data.nelement() for x in model.parameters())
+    print("total number of params: {}".format(total_params))
+
     model.to(device)
 
     LR = args.lr

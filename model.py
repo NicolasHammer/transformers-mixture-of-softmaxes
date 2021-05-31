@@ -2,7 +2,9 @@ import math
 
 import torch
 from torch import Tensor
-from torch import nn, functional as f
+from torch import nn
+from torch.nn import functional as f
+from torch.autograd import Variable
 
 
 class PositionalEncoding(nn.Module):
@@ -31,13 +33,35 @@ class Decoder(nn.Module):
         out = self.linear(x)
         return f.log_softmax(out, dim=-1)
 
-
 class MosDecoder(nn.Module):
-    def __init__(self, n_tokens, dim_model: int = 512):
-        super().__init__()
+    def __init__(self, num_softmaxes, ntoken, embedding_size,dropout):
+        super(MosDecoder, self).__init__()
 
-    def forward(self, x: Tensor):
-        pass
+        self.embedding_size = embedding_size
+        self.ntoken = ntoken
+        self.num_softmaxes = num_softmaxes
+
+        self.prior = nn.Linear(embedding_size, num_softmaxes, bias=False)
+        self.latent = nn.Sequential(
+            nn.Linear(embedding_size, num_softmaxes * embedding_size), nn.Tanh())
+        self.decoder = nn.Linear(embedding_size, ntoken)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, input):
+        latent = self.latent(input)
+        latent = self.dropout(latent)
+        logit = self.decoder(latent.view(-1, self.embedding_size))
+
+        prior_logit = self.prior(input).view(-1, self.num_softmaxes)
+        prior = f.softmax(prior_logit, -1)
+
+        prob = f.softmax(logit.view(-1, self.ntoken), -
+        1).view(-1, self.num_softmaxes, self.ntoken)
+        prob = (prob * prior.unsqueeze(2).expand_as(prob)).sum(1)
+
+        output = torch.log(prob.add_(1e-8)).view(-1, self.ntoken)
+
+        return output
 
 
 class Transformer(nn.Module):
@@ -66,6 +90,11 @@ class Transformer(nn.Module):
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
 
+    def generate_mask(self, sz):
+        mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
+        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
+        return mask
+
     def encode(self, src: Tensor, src_mask: Tensor) -> Tensor:
         src = self.embedding(src) * math.sqrt(self.dim_model)
         src = self.position_encoder(src)
@@ -88,8 +117,9 @@ def make_transformer(n_tokens, dim_model, n_heads, n_layers, n_ff_hid, dropout):
         dropout
     )
 
-def make__mos_transformer(n_tokens, dim_model, n_heads, n_layers, n_ff_hid, dropout):
-    decoder = MosDecoder(n_tokens, dim_model)
+
+def make_mos_transformer(n_experts, n_tokens, dim_model, n_heads, n_layers, n_ff_hid, dropout):
+    decoder = MosDecoder(n_experts, n_tokens, dim_model,dropout)
     return Transformer(
         n_tokens,
         decoder,
