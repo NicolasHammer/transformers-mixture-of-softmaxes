@@ -22,7 +22,7 @@ class TransformerModel(nn.Module):
             self.decoder = nn.Sequential(
                 nn.Linear(ninp, ntoken), nn.LogSoftmax(dim=-1))
         elif num_softmaxes > 1:
-            self.decoder = MixtureOfSoftmaxes(num_softmaxes, ntoken, ninp)
+            self.decoder = MixtureOfSoftmaxes(num_softmaxes, ntoken, ninp, dropout)
         else:
             raise Exception("num_softmaxes needs to be greater than 0")
 
