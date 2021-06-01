@@ -30,14 +30,14 @@ class Corpus(object):
         if isTrain:
             with open(path, 'r', encoding="utf8") as file:
                 for line in file:
-                    words = line.split() + ['<eos>']
+                    words = ['<sos>'] + line.split() + ['<eos>']
                     for word in words:
                         self.dictionary.add_word(word)
 
         with open(path, 'r', encoding="utf8") as f:
             data = []
             for line in f:
-                words = line.split() + ['<eos>']
+                words = ['<sos>'] + line.split() + ['<eos>']
                 sent_tokenized = torch.tensor([self.dictionary.word2idx[word] for word in words]).type(torch.int64)
                 data.append(sent_tokenized)
             return torch.cat(data)
