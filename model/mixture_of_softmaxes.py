@@ -1,10 +1,11 @@
 import torch
+from torch import Tensor
 from torch import nn
 import torch.nn.functional as F
 
 
 class MixtureOfSoftmaxes(nn.Module):
-    def __init__(self, num_softmaxes, ntoken, embedding_size, dropout):
+    def __init__(self, num_softmaxes: int, ntoken: int, embedding_size: int, dropout: float):
         super(MixtureOfSoftmaxes, self).__init__()
 
         self.embedding_size = embedding_size
@@ -17,7 +18,7 @@ class MixtureOfSoftmaxes(nn.Module):
         self.decoder = nn.Linear(embedding_size, ntoken)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, input):
+    def forward(self, input: Tensor) -> Tensor:
         latent = self.dropout(self.latent(input))
         logit = self.decoder(latent.view(-1, self.embedding_size))
 

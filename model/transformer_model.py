@@ -1,6 +1,7 @@
 import math
 
 import torch
+from torch import Tensor
 import torch.nn as nn
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 
@@ -8,7 +9,8 @@ from .mixture_of_softmaxes import MixtureOfSoftmaxes
 
 
 class TransformerModel(nn.Module):
-    def __init__(self, ntoken, ninp, nhead, nhid, nlayers, dropout=0.5, num_softmaxes=1):
+    def __init__(self, ntoken: int, ninp: int = 512, nhead: int = 8,
+                 nhid: int = 2048, nlayers: int = 6, dropout: float = 0.5, num_softmaxes: int = 1):
         super(TransformerModel, self).__init__()
         self.model_type = 'Transformer'
         self.pos_encoder = PositionalEncoding(ninp, dropout)
@@ -22,19 +24,20 @@ class TransformerModel(nn.Module):
             self.decoder = nn.Sequential(
                 nn.Linear(ninp, ntoken), nn.LogSoftmax(dim=-1))
         elif num_softmaxes > 1:
-            self.decoder = MixtureOfSoftmaxes(num_softmaxes, ntoken, ninp, dropout)
+            self.decoder = MixtureOfSoftmaxes(
+                num_softmaxes, ntoken, ninp, dropout)
         else:
             raise Exception("num_softmaxes needs to be greater than 0")
 
         self.init_weights()
 
-    def generate_square_subsequent_mask(self, sz):
+    def generate_square_subsequent_mask(self, sz: int) -> Tensor:
         mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
         mask = mask.float().masked_fill(mask == 0, float(
             '-inf')).masked_fill(mask == 1, float(0.0))
         return mask
 
-    def init_weights(self):
+    def init_weights(self) -> None:
         initrange = 0.1
         self.encoder.weight.data.uniform_(-initrange, initrange)
 
@@ -45,7 +48,7 @@ class TransformerModel(nn.Module):
 
         self.decoder.apply(init_decoder)
 
-    def forward(self, src, src_mask):
+    def forward(self, src: Tensor, src_mask: Tensor) -> Tensor:
         src = self.encoder(src) * math.sqrt(self.ninp)
         src = self.pos_encoder(src)
         output = self.transformer_encoder(src, src_mask)
@@ -54,7 +57,7 @@ class TransformerModel(nn.Module):
 
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, d_model, dropout=0.1, max_len=5000):
+    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
 
@@ -67,6 +70,6 @@ class PositionalEncoding(nn.Module):
         pe = pe.unsqueeze(0).transpose(0, 1)
         self.register_buffer('pe', pe)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         x = x + self.pe[:x.size(0), :]
         return self.dropout(x)
